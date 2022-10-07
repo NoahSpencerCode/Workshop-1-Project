@@ -2,6 +2,7 @@ package Multiverse.Backend;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
+import io.vertx.ext.web.client.WebClient;
 
 public class MainVerticle extends AbstractVerticle {
 
@@ -19,5 +20,16 @@ public class MainVerticle extends AbstractVerticle {
         startPromise.fail(http.cause());
       }
     });
+
+    WebClient client = WebClient.create(vertx);
+
+    // Send a GET request
+    client
+      .get(8888, "localhost", "/test")
+      .send()
+      .onSuccess(response -> System.out
+        .println("Received response with status code" + response.statusCode()))
+      .onFailure(err ->
+        System.out.println("Something went wrong " + err.getMessage()));
   }
 }
