@@ -26,7 +26,7 @@ dependencies {
 
 application {
     // Define the main class for the application.
-    mainClass.set("vertx.app.App")
+    mainClass.set("vertxproject.App")
 }
 
 tasks.named<Test>("test") {
