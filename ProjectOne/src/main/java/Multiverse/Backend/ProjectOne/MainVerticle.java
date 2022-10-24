@@ -1,58 +1,40 @@
 package Multiverse.Backend.ProjectOne;
 
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerResponse;
-import io.vertx.ext.web.Router;
-import io.vertx.ext.web.handler.BodyHandler;
 
 public class MainVerticle extends AbstractVerticle {
 
-  @Override
-  public void start(Promise<Void> startPromise) throws Exception {
+  public void start(Future<Void> startFuture) {
 
-    HttpServer server = vertx.createHttpServer();
-
-    Router router = Router.router(vertx);
-
-    router.route().handler(BodyHandler.create());
-
-    router.post("/Register").handler(ctx -> {
-
-      HttpServerResponse response = ctx.response();
-      response.putHeader("content-type", "text/plain");
-
-      String body = ctx.body().asString();
-
-      response.end("Registering");
-
-      System.out.println(body);
+    CompositeFuture.all(
+      deployVerticle(RestVerticle.class.getName()),
+      deployVerticle(CrudVerticle.class.getName())
+    ).onComplete(f -> {
+      if (f.succeeded()) {
+        startFuture.succeeded();
+      } else {
+        startFuture.failed();
+      }
     });
-
-    router.post("/Login").handler(ctx -> {
-
-      HttpServerResponse response = ctx.response();
-      response.putHeader("content-type", "text/plain");
-
-      String body = ctx.body().asString();
-
-      response.end("Logging in");
-
-      System.out.println(body);
-    });
-
-    router.route("/").handler(ctx -> {
-
-      // This handler will be called for every request
-      HttpServerResponse response = ctx.response();
-      response.putHeader("content-type", "text/plain");
-
-      // Write to the response and end it
-      response.end("Backend project by Noah Spencer.");
-    });
-
-    server.requestHandler(router).listen(8080);
 
   }
+
+  Future<Void> deployVerticle(String verticleName) {
+
+    Promise<Void> resultPromise = Promise.promise();
+    Future<Void> result = resultPromise.future();
+    vertx.deployVerticle(verticleName, event -> {
+      if (event.succeeded()) {
+        result.succeeded();
+      } else {
+        result.failed();
+      }
+    });
+
+    return result;
+  }
+
 }
