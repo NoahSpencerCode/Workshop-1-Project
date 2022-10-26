@@ -7,16 +7,18 @@ import io.vertx.core.Promise;
 
 public class MainVerticle extends AbstractVerticle {
 
-  public void start(Future<Void> startFuture) {
+  @Override
+  public void start(Promise<Void> startPromise) {
 
     CompositeFuture.all(
       deployVerticle(RestVerticle.class.getName()),
       deployVerticle(CrudVerticle.class.getName())
     ).onComplete(f -> {
       if (f.succeeded()) {
-        startFuture.succeeded();
+        startPromise.complete();
+        System.out.println("Completed all");
       } else {
-        startFuture.failed();
+        startPromise.fail(f.cause());
       }
     });
 
@@ -28,7 +30,8 @@ public class MainVerticle extends AbstractVerticle {
     Future<Void> result = resultPromise.future();
     vertx.deployVerticle(verticleName, event -> {
       if (event.succeeded()) {
-        result.succeeded();
+        result.isComplete();
+        System.out.println("Vert deployed");
       } else {
         result.failed();
       }

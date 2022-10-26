@@ -1,22 +1,59 @@
 package Multiverse.Backend.ProjectOne;
 
-import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.auth.mongo.MongoAuth;
-import io.vertx.ext.mongo.MongoClient;
 
 public class User {
 
-  MongoClient client;
-  MongoAuth authProvider;
-  public User(Vertx vertx) {
-    client = MongoClient.createShared(vertx, new JsonObject());
-    authProvider = MongoAuth.create(client, new JsonObject());
+  String username;
+
+  String password;
+
+  String token;
+
+  public JsonObject toSendableJson() {
+
+    JsonObject user = new JsonObject()
+      .put("username", this.username)
+      .put("password", this.password)
+      .put("token", this.token);
+
+    JsonObject send = new JsonObject()
+      .put("user", user);
+
+    return send;
+
   }
 
-  public String create(JsonObject postedBody) {
+  public void setUser(String username, String password, String token) {
 
+    this.username = username;
+    this.password = password;
+    this.token = token;
 
-    return "Unknown Error";
-  };
+  }
+
+  public String getUsername() {
+    return username;
+  }
+
+  public void setUsername(String username) {
+    this.username = username;
+  }
+
+  public String getPassword() {
+    return password;
+  }
+
+  public void setPassword(String password) {
+    this.password = password;
+  }
+
+  public String getToken() {
+    return token;
+  }
+
+  public void setToken(String token) {
+    this.token = token;
+  }
+
 }
