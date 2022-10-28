@@ -4,8 +4,8 @@
      xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>Multiverse.Backend</groupId>
-  <artifactId>ProjectOne</artifactId>
+  <groupId>com.backendtrack</groupId>
+  <artifactId>final</artifactId>
   <version>1.0.0-SNAPSHOT</version>
 
   <properties>
@@ -19,7 +19,7 @@
     <vertx.version>4.3.4</vertx.version>
     <junit-jupiter.version>5.7.0</junit-jupiter.version>
 
-    <main.verticle>Multiverse.Backend.ProjectOne.MainVerticle</main.verticle>
+    <main.verticle>com.backendtrack.final_.MainVerticle</main.verticle>
     <launcher.class>io.vertx.core.Launcher</launcher.class>
   </properties>
 
@@ -51,6 +51,10 @@
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-auth-mongo</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-auth-jdbc</artifactId>
     </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
