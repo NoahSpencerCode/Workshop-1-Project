@@ -17,6 +17,8 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.JWTAuthHandler;
 
+import java.util.Objects;
+
 public class MainVerticle extends AbstractVerticle {
 
   EventBus bussin;
@@ -46,24 +48,21 @@ public class MainVerticle extends AbstractVerticle {
 
     router.post("/register").handler(this::handleRegister);
     router.post("/login").handler(this::handleLogin);
+    router.post("/charge").handler(this::handleCharge);
 
     router.route("/actions/*").handler(JWTAuthHandler.create(jwtAuth));
 
-    router.post("/actions/charge").handler(this::handleCharge);
     router.post("/actions/apply").handler(this::handleApply);
     router.get("/actions/account").handler(this::handleAccount);
 
-    Route route_Users = router.route("/admin/users");
+    router.get("/actions/getUser").handler(this::handleAdminUserGet);
+    router.post("/actions/postUser").handler(this::handleAdminUserPost);
+    router.delete("/actions/deleteUser").handler(this::handleAdminUserDelete);
 
-    route_Users.method(HttpMethod.POST).handler(this::handleAdminUserPost);
-    route_Users.method(HttpMethod.GET).handler(this::handleAdminUserGet);
-    route_Users.method(HttpMethod.PUT).handler(this::handleAdminUserPut);
-
-    Route route_Cards = router.route("/admin/cards");
-
-    route_Cards.method(HttpMethod.POST).handler(this::handleAdminCardPost);
-    route_Cards.method(HttpMethod.GET).handler(this::handleAdminCardGet);
-    route_Cards.method(HttpMethod.PUT).handler(this::handleAdminCardPut);
+    router.get("/actions/getCard").handler(this::handleAdminCardGet);
+    router.post("/actions/postCard").handler(this::handleAdminCardPost);
+    router.delete("/actions/deleteCard").handler(this::handleAdminCardDelete);
+    router.put("/actions/putCard").handler(this::handleAdminCardPut);
 
     vertx.createHttpServer().requestHandler(router).listen(8888, http -> {
       if (http.succeeded()) {
@@ -113,16 +112,12 @@ public class MainVerticle extends AbstractVerticle {
 
   private void handleCharge(RoutingContext routingContext) {
 
-    User jwtUser = routingContext.user();
 
-    JsonObject prince = jwtUser.principal();
-
-    String username = prince.getString("username");
 
     JsonObject bus_Msg = new JsonObject()
       .put("action", "charge")
       .put("user", routingContext.body().asJsonObject()
-        .put("username", username)
+        .put("username", routingContext.body().asJsonObject().getString("card-holder-name"))
         .put("password", routingContext.body().asJsonObject().getString("card-number")));
 
     bussin.request("database",bus_Msg, messageAsyncResult -> {
@@ -165,34 +160,187 @@ public class MainVerticle extends AbstractVerticle {
   }
   private void handleAccount(RoutingContext routingContext) {
 
-    routingContext.end("Account");
+    User jwtUser = routingContext.user();
+
+    JsonObject prince = jwtUser.principal();
+
+    String username = prince.getString("username");
+
+    JsonObject bus_Msg = new JsonObject()
+      .put("action", "account")
+      .put("user", routingContext.body().asJsonObject()
+        .put("username", username));
+
+    bussin.request("database",bus_Msg, messageAsyncResult -> {
+      if (messageAsyncResult.succeeded()) {
+
+        routingContext.end(messageAsyncResult.result().body().toString());
+      } else {
+        routingContext.end("Sorry we couldn't find your card! " + messageAsyncResult.cause());
+      }
+
+    });
 
   }
 
   private void handleAdminUserPost(RoutingContext routingContext) {
 
-    routingContext.end("Added User");
+    User jwtUser = routingContext.user();
+
+    JsonObject prince = jwtUser.principal();
+
+    String username = prince.getString("username");
+
+    if (!Objects.equals(username, "admin")) {
+      routingContext.end("Not authorized");
+      return;
+    }
+
+    JsonObject bus_Msg = new JsonObject()
+      .put("action", "register")
+      .put("user", routingContext.body().asJsonObject());
+
+    bussin.request("database",bus_Msg, messageAsyncResult -> {
+      if (messageAsyncResult.succeeded()) {
+        routingContext.end("User registration successful");
+      } else {
+        routingContext.end("Registration failed! " + messageAsyncResult.cause());
+      }
+
+    });
 
   }
 
   private void handleAdminUserGet(RoutingContext routingContext) {
-    routingContext.end("User:__");
+
+    User jwtUser = routingContext.user();
+
+    JsonObject prince = jwtUser.principal();
+
+    String username = prince.getString("username");
+
+    if (!Objects.equals(username, "admin")) {
+      routingContext.end("Not authorized");
+      return;
+    }
+
+    JsonObject bus_Msg = new JsonObject()
+      .put("action", "getUser")
+      .put("user", routingContext.body().asJsonObject());
+
+    bussin.request("database",bus_Msg, messageAsyncResult -> {
+      if (messageAsyncResult.succeeded()) {
+        routingContext.end(messageAsyncResult.result().body().toString());
+      } else {
+        routingContext.end("get failed! " + messageAsyncResult.cause());
+      }
+
+    });
+
   }
 
   private void handleAdminUserPut(RoutingContext routingContext) {
-    routingContext.end("User Changed!");
+    User jwtUser = routingContext.user();
+
+    JsonObject prince = jwtUser.principal();
+
+    String username = prince.getString("username");
+
+    if (!Objects.equals(username, "admin")) {
+      routingContext.end("Not authorized");
+      return;
+    }
+
+
   }
 
   private void handleAdminCardPost(RoutingContext routingContext) {
-    routingContext.end("Card created!");
+    User jwtUser = routingContext.user();
+
+    JsonObject prince = jwtUser.principal();
+
+    String username = prince.getString("username");
+
+    if (!Objects.equals(username, "admin")) {
+      routingContext.end("Not authorized");
+      return;
+    }
+
+
   }
 
   private void handleAdminCardGet(RoutingContext routingContext) {
-    routingContext.end("Card:___");
+    User jwtUser = routingContext.user();
+
+    JsonObject prince = jwtUser.principal();
+
+    String username = prince.getString("username");
+
+    System.out.println(username);
+
+    if (!Objects.equals(username, "admin")) {
+      routingContext.end("Not authorized");
+      return;
+    }
+
+    JsonObject bus_Msg = new JsonObject()
+      .put("action", "getCard")
+      .put("user", routingContext.body().asJsonObject());
+
+    bussin.request("database",bus_Msg, messageAsyncResult -> {
+      if (messageAsyncResult.succeeded()) {
+
+        routingContext.end(messageAsyncResult.result().body().toString());
+      } else {
+        routingContext.end("Could not get card " + messageAsyncResult.cause());
+      }
+
+    });
   }
 
   private void handleAdminCardPut(RoutingContext routingContext) {
-    routingContext.end("Card changed!");
+
+    User jwtUser = routingContext.user();
+
+    JsonObject prince = jwtUser.principal();
+
+    String username = prince.getString("username");
+
+    if (!Objects.equals(username, "admin")) {
+      routingContext.end("Not authorized");
+      return;
+    }
+
+  }
+
+  private void handleAdminCardDelete(RoutingContext routingContext) {
+
+    User jwtUser = routingContext.user();
+
+    JsonObject prince = jwtUser.principal();
+
+    String username = prince.getString("username");
+
+    if (!Objects.equals(username, "admin")) {
+      routingContext.end("Not authorized");
+      return;
+    }
+
+  }
+
+  private void handleAdminUserDelete(RoutingContext routingContext) {
+
+    User jwtUser = routingContext.user();
+
+    JsonObject prince = jwtUser.principal();
+
+    String username = prince.getString("username");
+
+    if (!Objects.equals(username, "admin")) {
+      routingContext.end("Not authorized");
+      return;
+    }
+
   }
 
 }

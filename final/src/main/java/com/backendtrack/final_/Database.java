@@ -68,6 +68,15 @@ public class Database extends AbstractVerticle {
           case "charge":
             chargeCard(message);
             break;
+          case "account":
+            account(message);
+            break;
+          case "getCard":
+            getCard(message);
+            break;
+          case "getUser":
+            getUser(message);
+            break;
           default:
             message.fail(1, "Unknown action: " + message.body());
         }
@@ -233,7 +242,7 @@ public class Database extends AbstractVerticle {
 
     }
 
-    private void updateCardBalance(JsonObject user, Double newBalance, Message<JsonObject> message, Double availableCredit) {
+    private void updateCardBalance(JsonObject user, Float newBalance, Message<JsonObject> message, Float availableCredit) {
 
       JsonObject query = new JsonObject()
         .put("username", user.getString("username"));
@@ -262,11 +271,11 @@ public class Database extends AbstractVerticle {
 
           JsonObject card = listAsyncResult.result().get(0);
 
-          Double newBalance = Double.parseDouble(card.getString("balance")) + user.getDouble("amount");
+          Float newBalance = Float.parseFloat(card.getString("balance")) + user.getFloat("amount");
 
-          Double availableCredit = Double.parseDouble(card.getString("credit-limit")) - newBalance;
+          Float availableCredit = Float.parseFloat(card.getString("credit-limit")) - newBalance;
 
-          if (newBalance < Double.parseDouble(card.getString("credit-limit"))) {
+          if (newBalance < Float.parseFloat(card.getString("credit-limit"))) {
 
             updateCardBalance(user, newBalance, message, availableCredit);
 
@@ -295,6 +304,79 @@ public class Database extends AbstractVerticle {
 
           } else {
             message.fail(1, "card not found");
+          }
+        } else {
+          listAsyncResult.cause().printStackTrace();
+          message.fail(2, "find failed: " + listAsyncResult.cause().getMessage());
+        }
+
+      });
+
+    }
+
+    private  void getCard(Message<JsonObject> message) {
+
+      JsonObject user = message.body().getJsonObject("user");
+
+      client.find("card", new JsonObject().put("username", user.getString("username")), listAsyncResult -> {
+
+        if (listAsyncResult.succeeded()) {
+          if (!listAsyncResult.result().isEmpty()) {
+
+            message.reply(listAsyncResult.result().toString());
+
+          } else {
+            message.fail(1, "card not found");
+          }
+        } else {
+          listAsyncResult.cause().printStackTrace();
+          message.fail(2, "find failed: " + listAsyncResult.cause().getMessage());
+        }
+
+      });
+
+    }
+
+    private void account(Message<JsonObject> message) {
+
+      JsonObject user = message.body().getJsonObject("user");
+
+      client.find("card", new JsonObject().put("username", user.getString("username")), listAsyncResult -> {
+
+        if (listAsyncResult.succeeded()) {
+          if (!listAsyncResult.result().isEmpty()) {
+
+            String balance = listAsyncResult.result().get(0).getString("balance");
+
+            String creditLimit = listAsyncResult.result().get(0).getString("credit-limit");
+
+            message.reply("Balance: " + balance + " Credit Limit: " + creditLimit);
+
+          } else {
+            message.fail(1, "card not found");
+          }
+        } else {
+          listAsyncResult.cause().printStackTrace();
+          message.fail(2, "find failed: " + listAsyncResult.cause().getMessage());
+        }
+
+      });
+
+    }
+
+    private void getUser(Message<JsonObject> message) {
+
+      JsonObject user = message.body().getJsonObject("user");
+
+      client.find("user", new JsonObject().put("username", user.getString("username")), listAsyncResult -> {
+
+        if (listAsyncResult.succeeded()) {
+          if (!listAsyncResult.result().isEmpty()) {
+
+            message.reply(listAsyncResult.result().get(0).toString());
+
+          } else {
+            message.fail(1, "User not found");
           }
         } else {
           listAsyncResult.cause().printStackTrace();
